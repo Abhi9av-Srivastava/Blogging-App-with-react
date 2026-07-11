@@ -3,6 +3,9 @@ import axios from "axios";
 import Navbar from "./components/Navbar";
 import heroIllustration from "./assets/hero-illustration.svg";
 import heroPhoto from "./assets/hero.png";
+import readingNook from "./assets/reading-nook.svg";
+import writerSetup from "./assets/writer-setup.svg";
+import journalCards from "./assets/journal-cards.svg";
 import "./App.css";
 
 const formatPostDate = (value) => {
@@ -24,10 +27,15 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [feedback, setFeedback] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const titleCharacterCount = title.length;
   const contentCharacterCount = content.length;
   const isPublishDisabled = isSubmitting || !title.trim() || !content.trim();
+  const filteredPosts = posts.filter((post) => {
+    const searchableText = `${post.title ?? ""} ${post.content ?? ""}`.toLowerCase();
+    return searchableText.includes(searchTerm.toLowerCase().trim());
+  });
 
   const loadPosts = async () => {
     try {
@@ -188,7 +196,17 @@ function App() {
               <p className="section-label">Recently published</p>
               <h2>Your posts</h2>
             </div>
-            <span className="posts-pill">{posts.length} total</span>
+            <span className="posts-pill">{filteredPosts.length} shown</span>
+          </div>
+
+          <div className="search-bar">
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search posts by title or content"
+              aria-label="Search posts"
+            />
           </div>
 
           {isLoadingPosts ? (
@@ -198,8 +216,13 @@ function App() {
               <h3>No posts yet</h3>
               <p>Your first post will appear here once you publish it.</p>
             </div>
+          ) : filteredPosts.length === 0 ? (
+            <div className="status-card empty-state">
+              <h3>No matching posts</h3>
+              <p>Try a different keyword to find what you need.</p>
+            </div>
           ) : (
-            posts.map((post) => (
+            filteredPosts.map((post) => (
               <article className="post-card" key={post.id}>
                 <div className="post-card__header">
                   <div>
@@ -229,9 +252,9 @@ function App() {
           </div>
 
           <div className="photo-grid">
-            <img src={heroPhoto} alt="Reading and writing inspiration" className="showcase-image" />
-            <img src={heroIllustration} alt="Creative blog workspace" className="showcase-image" />
-            <img src={heroPhoto} alt="Comfortable writing setup" className="showcase-image" />
+            <img src={readingNook} alt="Reading and writing inspiration" className="showcase-image" />
+            <img src={writerSetup} alt="Creative blog workspace" className="showcase-image" />
+            <img src={journalCards} alt="Comfortable writing setup" className="showcase-image" />
           </div>
         </section>
 
