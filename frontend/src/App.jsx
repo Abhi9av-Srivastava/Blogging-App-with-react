@@ -5,12 +5,29 @@ import heroIllustration from "./assets/hero-illustration.svg";
 import heroPhoto from "./assets/hero.png";
 import "./App.css";
 
+const formatPostDate = (value) => {
+  if (!value) return "Just now";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Just now";
+
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
 function App() {
   const [posts, setPosts] = useState([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [feedback, setFeedback] = useState(null);
+
+  const titleCharacterCount = title.length;
+  const contentCharacterCount = content.length;
+  const isPublishDisabled = isSubmitting || !title.trim() || !content.trim();
 
   const loadPosts = async () => {
     try {
@@ -19,6 +36,7 @@ function App() {
       setPosts(res.data);
     } catch (error) {
       console.error("Failed to load posts", error);
+      setFeedback({ type: "error", message: "We could not refresh your posts right now." });
     } finally {
       setIsLoadingPosts(false);
     }
@@ -33,12 +51,18 @@ function App() {
     const trimmedContent = content.trim();
 
     if (!trimmedTitle || !trimmedContent) {
-      window.alert("Please enter both a title and content before publishing.");
+      setFeedback({ type: "error", message: "Please enter both a title and content before publishing." });
+      return;
+    }
+
+    if (trimmedTitle.length > 80) {
+      setFeedback({ type: "error", message: "Titles should stay under 80 characters for a cleaner layout." });
       return;
     }
 
     try {
       setIsSubmitting(true);
+      setFeedback({ type: "info", message: "Publishing your post..." });
       await axios.post("/posts", {
         title: trimmedTitle,
         content: trimmedContent,
@@ -46,10 +70,11 @@ function App() {
 
       setTitle("");
       setContent("");
+      setFeedback({ type: "success", message: "Your post is live and ready to read." });
       await loadPosts();
     } catch (error) {
       console.error("Failed to publish post", error);
-      window.alert("Publish failed. Make sure the backend server is running.");
+      setFeedback({ type: "error", message: "Publish failed. Make sure the backend server is running." });
     } finally {
       setIsSubmitting(false);
     }
@@ -58,10 +83,18 @@ function App() {
   const deletePost = async (id) => {
     try {
       await axios.delete(`/posts/${id}`);
+      setFeedback({ type: "success", message: "Post removed from your collection." });
       await loadPosts();
     } catch (error) {
       console.error("Failed to delete post", error);
+      setFeedback({ type: "error", message: "Unable to delete that post right now." });
     }
+  };
+
+  const clearDraft = () => {
+    setTitle("");
+    setContent("");
+    setFeedback({ type: "info", message: "Draft cleared. Ready for a fresh idea." });
   };
 
   return (
@@ -74,7 +107,7 @@ function App() {
             <span className="hero-badge">✨ Welcome back, friend</span>
             <h1>Share your stories with confidence</h1>
             <p>
-              Create, organize, and revisit your thoughts in a clean experience made for everyday writing.
+              Capture ideas, publish them beautifully, and keep your thoughts in one calm workspace.
             </p>
             <div className="hero-stats">
               <div>
@@ -82,8 +115,12 @@ function App() {
                 <span>posts</span>
               </div>
               <div>
-                <strong>100%</strong>
-                <span>focus</span>
+                <strong>{posts.filter((post) => post.content && post.content.length > 120).length}</strong>
+                <span>deep dives</span>
+              </div>
+              <div>
+                <strong>{posts.length > 0 ? "Live" : "Fresh"}</strong>
+                <span>status</span>
               </div>
             </div>
           </div>
@@ -99,29 +136,50 @@ function App() {
             </div>
           </div>
 
+          {feedback ? <div className={`feedback-banner ${feedback.type}`}>{feedback.message}</div> : null}
+
           <div className="form-group">
-            <label htmlFor="title">Title</label>
+            <div className="input-meta">
+              <label htmlFor="title">Title</label>
+              <span>{titleCharacterCount}/80</span>
+            </div>
             <input
               id="title"
               placeholder="A catchy title..."
               value={title}
+              maxLength={80}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="content">Content</label>
+            <div className="input-meta">
+              <label htmlFor="content">Content</label>
+              <span>{contentCharacterCount}/500</span>
+            </div>
             <textarea
               id="content"
               placeholder="What do you want to share today?"
               value={content}
+              maxLength={500}
               onChange={(e) => setContent(e.target.value)}
             />
           </div>
 
-          <button className="publish-btn" onClick={addPost} disabled={isSubmitting}>
-            {isSubmitting ? "Publishing..." : "Publish post"}
-          </button>
+          <div className="form-actions">
+            <button className="publish-btn" onClick={addPost} disabled={isPublishDisabled}>
+              {isSubmitting ? "Publishing..." : "Publish post"}
+            </button>
+            <button className="secondary-btn" type="button" onClick={clearDraft}>
+              Clear draft
+            </button>
+          </div>
+
+          <div className="preview-card">
+            <p className="preview-label">Live preview</p>
+            <h3>{title.trim() || "Your polished title appears here"}</h3>
+            <p>{content.trim() || "Start typing and your preview will update instantly."}</p>
+          </div>
         </section>
 
         <section id="posts" className="posts-section">
@@ -144,13 +202,19 @@ function App() {
             posts.map((post) => (
               <article className="post-card" key={post.id}>
                 <div className="post-card__header">
-                  <h3>{post.title}</h3>
+                  <div>
+                    <h3>{post.title}</h3>
+                    <p className="post-meta">{formatPostDate(post.created_at)}</p>
+                  </div>
                   <span className="post-dot" />
                 </div>
                 <p>{post.content}</p>
-                <button className="delete-btn" onClick={() => deletePost(post.id)}>
-                  Delete
-                </button>
+                <div className="post-card__footer">
+                  <span className="post-pill post-pill--soft">Published</span>
+                  <button className="delete-btn" onClick={() => deletePost(post.id)}>
+                    Delete
+                  </button>
+                </div>
               </article>
             ))
           )}
