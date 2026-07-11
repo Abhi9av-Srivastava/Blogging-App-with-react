@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "./components/Navbar";
-import LoginPage from "./components/LoginPage";
 import heroIllustration from "./assets/hero-illustration.svg";
+import heroPhoto from "./assets/hero.png";
 import "./App.css";
 
 function App() {
@@ -11,8 +11,6 @@ function App() {
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
 
   const loadPosts = async () => {
     try {
@@ -66,15 +64,6 @@ function App() {
     }
   };
 
-  const handleLogin = (email) => {
-    setUserName(email.split("@")[0]);
-    setIsLoggedIn(true);
-  };
-
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
   return (
     <div className="app-shell">
       <Navbar />
@@ -82,7 +71,7 @@ function App() {
       <main id="home" className="app-container">
         <section className="hero-section">
           <div className="hero-copy">
-            <span className="hero-badge">✨ Welcome back, {userName || "friend"}</span>
+            <span className="hero-badge">✨ Welcome back, friend</span>
             <h1>Share your stories with confidence</h1>
             <p>
               Create, organize, and revisit your thoughts in a clean experience made for everyday writing.
@@ -165,6 +154,21 @@ function App() {
               </article>
             ))
           )}
+        </section>
+
+        <section className="photo-showcase">
+          <div className="section-heading">
+            <div>
+              <p className="section-label">Inspiration</p>
+              <h2>Fresh visuals for your ideas</h2>
+            </div>
+          </div>
+
+          <div className="photo-grid">
+            <img src={heroPhoto} alt="Reading and writing inspiration" className="showcase-image" />
+            <img src={heroIllustration} alt="Creative blog workspace" className="showcase-image" />
+            <img src={heroPhoto} alt="Comfortable writing setup" className="showcase-image" />
+          </div>
         </section>
 
         <section className="info-grid">
