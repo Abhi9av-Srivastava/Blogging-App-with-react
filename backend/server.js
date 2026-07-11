@@ -7,75 +7,59 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.json({ message: "Blogging app API is running" });
+});
+
 // Get all posts
-app.get("/posts",(req,res)=>{
+app.get("/posts", (req, res) => {
+  db.query("SELECT * FROM posts ORDER BY id DESC", (err, result) => {
+    if (err) {
+      res.status(500).json({ error: "Failed to fetch posts" });
+      return;
+    }
 
-    db.query(
-        "SELECT * FROM posts ORDER BY id DESC",
-        (err,result)=>{
-
-            if(err)
-                res.status(500).send(err);
-
-            else
-                res.json(result);
-        }
-    );
-
+    res.json(result);
+  });
 });
 
 // Create post
+app.post("/posts", (req, res) => {
+  const { title, content } = req.body;
 
-app.post("/posts",(req,res)=>{
+  if (!title || !content) {
+    res.status(400).json({ error: "Title and content are required" });
+    return;
+  }
 
-    const {title,content}=req.body;
+  db.query(
+    "INSERT INTO posts(title,content) VALUES(?, ?)",
+    [title, content],
+    (err) => {
+      if (err) {
+        res.status(500).json({ error: "Failed to create post" });
+        return;
+      }
 
-
-    db.query(
-        "INSERT INTO posts(title,content) VALUES(?,?)",
-        [title,content],
-
-        (err,result)=>{
-
-            if(err)
-                res.status(500).send(err);
-
-            else
-                res.json({
-                    message:"Post created"
-                });
-
-        }
-    );
-
+      res.status(201).json({ message: "Post created" });
+    }
+  );
 });
 
 // Delete post
+app.delete("/posts/:id", (req, res) => {
+  const id = req.params.id;
 
-app.delete("/posts/:id",(req,res)=>{
+  db.query("DELETE FROM posts WHERE id=?", [id], (err) => {
+    if (err) {
+      res.status(500).json({ error: "Failed to delete post" });
+      return;
+    }
 
-    const id=req.params.id;
-
-
-    db.query(
-        "DELETE FROM posts WHERE id=?",
-        [id],
-
-        (err,result)=>{
-
-            if(err)
-                res.status(500).send(err);
-
-            else
-                res.json({
-                    message:"Deleted"
-                });
-
-        }
-    );
-
+    res.json({ message: "Deleted" });
+  });
 });
 
-app.listen(5000,()=>{
-    console.log("Server running on port 5000");
+app.listen(5000, () => {
+  console.log("Server running on port 5000");
 });
