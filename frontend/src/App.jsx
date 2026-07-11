@@ -113,7 +113,7 @@ function App() {
         <section className="hero-section">
           <div className="hero-copy">
             <span className="hero-badge">✨ Welcome back, friend</span>
-            <h1>Share your stories with confidence</h1>
+            <h1>Share your stories with everyone</h1>
             <p>
               Capture ideas, publish them beautifully, and keep your thoughts in one calm workspace.
             </p>
